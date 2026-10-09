@@ -1,0 +1,8 @@
+{
+  "appId": "it.longlong.chinese",
+  "appName": "龙龙中文",
+  "webDir": "www",
+  "backgroundColor": "#FFF3EE",
+  "android": { "allowMixedContent": false },
+  "server": { "androidScheme": "https" }
+}

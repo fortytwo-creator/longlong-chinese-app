@@ -1,0 +1,56 @@
+# 龙龙中文 - sito statico (nessuna compilazione)
+[build]
+  publish = "."
+  command = "echo 'sito statico'"
+
+# pagine e programma: sempre l'ultima versione
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=utf-8"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Service-Worker-Allowed = "/"
+
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Content-Type = "application/manifest+json; charset=utf-8"
+
+# file pesanti: si possono tenere in cache a lungo
+[[headers]]
+  for = "/audio/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+    Content-Type = "audio/mpeg"
+[[headers]]
+  for = "/audio/manifest.json"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Content-Type = "application/json; charset=utf-8"
+[[headers]]
+  for = "/strokes/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+    Content-Type = "image/png"
+
+# pacchetto audio a pagamento ospitato qui: l'app dello store lo scarica da un'altra origine, serve CORS
+[[headers]]
+  for = "/audio-premium/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "public, max-age=86400"

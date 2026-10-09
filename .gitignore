@@ -1,0 +1,14 @@
+# Segreti: non vanno mai pubblicati
+tools/azure-key.txt
+config.local.js
+.env
+.env.*
+.claude/
+node_modules/
+*.log
+.DS_Store
+
+# versione per gli store
+native/www/
+native/node_modules/
+models/*.tar.gz

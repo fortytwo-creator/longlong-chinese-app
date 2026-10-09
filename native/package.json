@@ -1,0 +1,23 @@
+{
+  "name": "longlong-native",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Involucro Capacitor (Android / iOS) dell'app 龙龙中文. Il sito vero sta nella cartella superiore.",
+  "scripts": {
+    "www": "node scripts/build-www.cjs",
+    "sync": "npm run www && npx cap sync",
+    "android": "npm run sync && npx cap open android",
+    "ios": "npm run sync && npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.0",
+    "@capacitor/core": "^6.1.0",
+    "@capacitor/filesystem": "^6.0.0",
+    "@capacitor/ios": "^6.1.0",
+    "@revenuecat/purchases-capacitor": "^10.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^6.1.0"
+  }
+}

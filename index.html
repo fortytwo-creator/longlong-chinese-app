@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ff7fa8">
+  <title>龙龙中文</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
+  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="apple-touch-icon.png?v=3">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="龙龙中文">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header id="top">
+      <div class="who"><span class="avatar" id="hAvatar">🐉</span><b id="hName">Ciao!</b></div>
+      <div class="pills">
+        <span class="pill" title="Giorni di fila">🔥 <b id="hStreak">0</b></span>
+        <span class="pill" title="XP">⭐ <b id="hXp">0</b></span>
+        <span class="pill" title="Monete">🪙 <b id="hCoins">0</b></span>
+      </div>
+    </header>
+
+    <main id="view"></main>
+
+    <nav id="nav">
+      <button data-act="nav" data-id="home"><span>🏠</span>Home</button>
+      <button data-act="nav" data-id="course"><span>🐉</span>Corso</button>
+      <button data-act="nav" data-id="arcade"><span>🥋</span>Dojo</button>
+      <button data-act="nav" data-id="stats"><span>📊</span>Stats</button>
+      <button data-act="nav" data-id="profile"><span>👤</span>Profilo</button>
+    </nav>
+  </div>
+
+  <div id="sheet" hidden>
+    <div class="s-top">
+      <button class="s-close" data-act="close" aria-label="Chiudi">✕</button>
+      <div class="s-bar"><i id="sProg"></i></div>
+      <b id="sTitle"></b>
+    </div>
+    <div id="sBody"></div>
+  </div>
+  <div id="toast" role="status"></div>
+
+  <script src="lib/hanzi-writer.min.js"></script>
+  <script src="config.js"></script>
+  <script src="js/vocab.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/lessons.js"></script>
+  <script src="js/course.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/entitlement.js"></script>
+  <script src="js/native.js"></script>
+  <script src="js/cloud.js"></script>
+  <script src="js/pitch.js"></script>
+  <script src="js/phon.js"></script>
+  <script src="js/asr.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/steps.js"></script>
+  <script src="js/offline.js"></script>
+  <script src="js/billing.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
