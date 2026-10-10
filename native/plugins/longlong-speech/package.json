@@ -1,0 +1,9 @@
+{
+  "name": "longlong-speech",
+  "version": "1.0.0",
+  "description": "Microfono nativo e riconoscimento vocale di Apple (cinese) per LongLong",
+  "license": "UNLICENSED",
+  "private": true,
+  "files": ["ios", "LonglongSpeech.podspec"],
+  "capacitor": { "ios": { "src": "ios" } }
+}

@@ -325,3 +325,14 @@ canvas { width: 100%; max-width: 360px; height: auto; align-self: center; border
 .tc-main { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; padding: 4px; }
 .tc-main b { font-size: 15px; }
 .tc-main small { font-size: 11.5px; color: var(--muted); text-align: center; line-height: 1.3; }
+
+/* La mia voce (registrazione) */
+.vs { display: flex; flex-direction: column; gap: 12px; }
+.vs-word { text-align: center; padding: 10px 0; }
+.vs-zh { font-size: 64px; font-weight: 900; line-height: 1.1; }
+.vs-py { font-size: 24px; font-weight: 800; color: var(--pink, #e0618a); }
+.vs-it { font-size: 15px; opacity: .75; margin-top: 4px; }
+.vs-msg { min-height: 44px; text-align: center; font-size: 14px; }
+.vs-row { display: flex; gap: 10px; } .vs-row .btn { flex: 1; }
+.btn:disabled { opacity: .4; }
+.btn.primary.live { background: #ff4d6d; box-shadow: 0 4px 0 #c93a57; animation: pulse 1s infinite; }

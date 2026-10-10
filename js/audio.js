@@ -94,7 +94,7 @@
     var gender = opts.gender || 'FEMALE', slow = !!opts.slow;
     var rate = slow ? '0.7' : '0.9';
     stopAll();
-    var lu = localUrl(text, gender);
+    var lu = (!opts.noMine && window.Voice && window.Voice.url(text)) || localUrl(text, gender);
     var chain = lu ? playUrl(lu, slow ? 0.72 : 1).then(function () { lastError = ''; return 'local'; })
       : Promise.reject(new Error('file audio non presente'));
     return chain.catch(function (e0) {
@@ -108,8 +108,38 @@
     });
   }
 
+  /* ---------- microfono nativo (app per iPhone, plugin longlong-speech): campioni grezzi, senza filtri del browser ---------- */
+  function nativeMic() { var C = window.Capacitor; return C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.LongLongSpeech || null; }
+  function f32FromB64(t) { var s = atob(t), u = new Uint8Array(s.length), k; for (k = 0; k < s.length; k++) u[k] = s.charCodeAt(k); return new Float32Array(u.buffer, 0, Math.floor(u.length / 4)); }
+  function wavUrl(pcm, sr) {
+    var n = pcm.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf), p = 0, i;
+    function w(t) { for (var k = 0; k < t.length; k++) v.setUint8(p++, t.charCodeAt(k)); }
+    w('RIFF'); v.setUint32(p, 36 + n * 2, true); p += 4; w('WAVEfmt '); v.setUint32(p, 16, true); p += 4; v.setUint16(p, 1, true); p += 2; v.setUint16(p, 1, true); p += 2;
+    v.setUint32(p, sr, true); p += 4; v.setUint32(p, sr * 2, true); p += 4; v.setUint16(p, 2, true); p += 2; v.setUint16(p, 16, true); p += 2; w('data'); v.setUint32(p, n * 2, true); p += 4;
+    for (i = 0; i < n; i++) { var x = Math.max(-1, Math.min(1, pcm[i])); v.setInt16(p, x < 0 ? x * 32768 : x * 32767, true); p += 2; }
+    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+  }
+  function recordNative(P) {
+    return P.requestPermissions().then(function (r) { if (!r || !r.mic) throw new Error('Permesso del microfono negato: attivalo nelle Impostazioni.'); return P.startRecording(); }).then(function () {
+      return {
+        level: function () { return 0; },
+        stop: function () {
+          return P.stopRecording().then(function (r) {
+            var pcm = f32FromB64(r.audio), sr = r.sampleRate, frames = window.Pitch.framesFromSamples(pcm, sr, 30, 2048);
+            return { blob: null, url: pcm.length ? wavUrl(pcm, sr) : null, frames: frames, samples: frames.length, pcm: pcm, sampleRate: sr };
+          });
+        }
+      };
+    });
+  }
+
   /* ---------- registrazione: restituisce i frame (altezza + energia) ogni 30 ms ---------- */
   function record() {
+    var NP = nativeMic();
+    if (NP) return recordNative(NP).catch(function (e) { if (/Permesso/.test(e && e.message)) throw e; return recordWeb(); });
+    return recordWeb();
+  }
+  function recordWeb() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       return Promise.reject(new Error('Il microfono richiede https oppure localhost'));
     }

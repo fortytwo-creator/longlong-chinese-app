@@ -1,6 +1,6 @@
 /* 龙龙中文 - schermate, corso guidato (100 lezioni) e dojo. Tutti i pulsanti usano la delega degli eventi. */
 (function () {
-  window.APP_VERSION = '2026-10-10 · android 2';
+  window.APP_VERSION = '2026-10-10 · ios 1';
   'use strict';
 
   var Ut = window.Util, Steps = window.Steps, A = window.AudioKit, S = window.Store, Ent = window.Ent, Off = window.Offline, P = window.Pitch;
@@ -197,6 +197,8 @@
         'Per non perderli se cambi telefono o se il browser pulisce i dati, scarica ogni tanto un backup.</p><p class="lead" id="persistTxt"></p>' +
         '<button class="btn primary" data-act="backup">💾 Scarica il backup</button><button class="btn soft" data-act="restore">📂 Ripristina da un backup</button>' +
         '<input type="file" id="restoreFile" accept="application/json,.json" hidden></div>';
+      html += '<h3 class="sec">La mia voce</h3><div class="card form"><p class="lead">Sei madrelingua? Registra le parole con la tua voce: l\'app prova subito se riconosce toni e suoni, e puoi usarle al posto della voce sintetica. Le registrazioni restano sul telefono.</p><p class="lead" id="voiceTxt"></p>' +
+        '<button class="btn primary" data-act="voicestudio">🎙️ Registra la mia voce</button><button class="btn soft" data-act="voiceuse">' + (p.useMyVoice ? '✓ Uso la mia voce (tocca per spegnere)' : 'Usa la mia voce per l\'ascolto') + '</button></div>';
       html += '<h3 class="sec">Account</h3><div class="card form" id="acctCard">' + accountInner() + '</div>';
 
       html += '<h3 class="sec">Usare l\'app senza internet</h3><div class="card form dl">' +
@@ -220,7 +222,11 @@
 
   function render() {
     updateHeader(); $('#view').innerHTML = views[state.name](state.id);
-    if (state.name === 'profile') { refreshOffline(); showPersist(); }
+    if (state.name === 'profile') { refreshOffline(); showPersist(); showVoiceCount(); }
+  }
+  function showVoiceCount() {
+    if (!window.Voice) return;
+    Voice.init().then(function () { var el = $('#voiceTxt'); if (el) el.textContent = Voice.count() ? '🎙️ Parole registrate: ' + Voice.count() + ' / ' + (window.VOCAB || []).length : 'Nessuna parola registrata.'; });
   }
   function showPersist() {
     var el = $('#persistTxt'); if (!el || !navigator.storage || !navigator.storage.persisted) return;
@@ -627,6 +633,15 @@
     },
     restore: function () { var f = $('#restoreFile'); if (f) f.click(); },
     account: function () { showAccount(); },
+    voicestudio: function () {
+      var body = openSheet('La mia voce'); sheet.again = null;
+      Voice.studio(body, { close: closeSheet, who: S.get().profile.name }).then(function (fn) { sheet.cleanup = fn; });
+    },
+    voiceuse: function () {
+      var p = S.get().profile;
+      if (!p.useMyVoice && !(window.Voice && Voice.count())) { toast('Prima registra qualche parola'); return; }
+      p.useMyVoice = !p.useMyVoice; S.save(); render(); toast(p.useMyVoice ? '🎙️ Userò la tua voce quando c\'è' : 'Voce dell\'app');
+    },
     unlock: function () { var p = S.get().profile; p.unlockAll = !p.unlockAll; S.save(); render(); },
     deactivate: function () { Ent.deactivate(); render(); },
     download: doDownload,
@@ -692,6 +707,7 @@
 
   if (window.Billing && Billing.available()) Billing.check().then(function (ok) { if (ok && !Ent.isPremium()) { Ent.set(true); render(); } });
   if (window.NativeFS) NativeFS.watch();
+  if (window.Voice && S.get().profile.useMyVoice) Voice.init();
   A.loadManifest().then(function () { if (state.name === 'profile') refreshOffline(); });
   if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) {
     navigator.serviceWorker.register('sw.js').then(function () { return navigator.serviceWorker.ready; }).then(function () { if (state.name === 'profile') refreshOffline(); }).catch(function () { /* facoltativo */ });

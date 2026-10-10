@@ -1,0 +1,113 @@
+# Codemagic: compila l'app 龙龙中文 per iPhone e Android partendo dal repository.
+# Prima di tutto lancia "ios-prova" (non serve l'account Apple Developer): dice se il codice Swift compila.
+# Variabili da impostare in Codemagic (Team/App → Environment variables, gruppo "longlong"):
+#   PACK_URL        indirizzo dove hai messo audio-premium/ (con / finale), es. https://tuosito.netlify.app/audio-premium/
+#   RC_KEY_IOS      chiave RevenueCat per iOS (anche vuota, per ora)
+#   RC_KEY_ANDROID  chiave RevenueCat per Android (anche vuota, per ora)
+# Il repository deve avere la cartella audio/ (audio gratuito): è dentro l'app.
+
+definitions:
+  env_native: &env_native
+    node: 20
+    xcode: latest
+    cocoapods: default
+    groups:
+      - longlong
+  prepara_nativo: &prepara_nativo
+    name: Prepara l'app (npm, pagine, piattaforma)
+    script: |
+      set -e
+      cd native
+      npm install
+      npm run www
+
+workflows:
+  ios-prova:
+    name: iPhone - prova di compilazione (senza firma)
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    environment: *env_native
+    scripts:
+      - *prepara_nativo
+      - name: Aggiungi iOS e permessi
+        script: |
+          set -e
+          cd native
+          npx cap add ios
+          npx cap sync ios
+          node scripts/prepare-platforms.cjs
+      - name: Compila per il simulatore
+        script: |
+          set -e
+          cd native/ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build | xcpretty
+    artifacts:
+      - native/ios/App/build/**/*.app
+
+  ios-testflight:
+    name: iPhone - TestFlight (serve l'account Apple Developer)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: NOME_DELLA_TUA_CHIAVE   # il nome che hai già in Codemagic (Teams → Integrations → App Store Connect), lo stesso di lovetemasu
+    environment:
+      <<: *env_native
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: it.longlong.chinese
+      vars:
+        APP_STORE_APPLE_ID: "0"              # sostituisci con l'ID numerico dell'app in App Store Connect
+    scripts:
+      - *prepara_nativo
+      - name: Aggiungi iOS e permessi
+        script: |
+          set -e
+          cd native
+          npx cap add ios
+          npx cap sync ios
+          node scripts/prepare-platforms.cjs
+      - name: Firma e numero di versione
+        script: |
+          set -e
+          cd native/ios/App
+          xcode-project use-profiles
+          agvtool new-version -all $(($(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID") + 1))
+      - name: Crea il file .ipa
+        script: |
+          set -e
+          cd native/ios/App
+          xcode-project build-ipa --workspace App.xcworkspace --scheme App
+    artifacts:
+      - native/ios/App/build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+
+  android-prova:
+    name: Android - APK di prova
+    instance_type: linux_x2
+    max_build_duration: 40
+    environment:
+      node: 20
+      java: 17
+      groups:
+        - longlong
+    scripts:
+      - *prepara_nativo
+      - name: Aggiungi Android e permessi
+        script: |
+          set -e
+          cd native
+          npx cap add android
+          npx cap sync android
+          node scripts/prepare-platforms.cjs
+      - name: Compila l'APK
+        script: |
+          set -e
+          cd native/android
+          ./gradlew assembleDebug
+    artifacts:
+      - native/android/app/build/outputs/**/*.apk

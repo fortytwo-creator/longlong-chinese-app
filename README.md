@@ -116,3 +116,21 @@ Con l'invio email predefinito di Supabase l'email contiene un link «Sign in», 
 - Audio a pagamento: scaricati dopo l'acquisto nella cartella privata dell'app (plugin `@capacitor/filesystem`, `js/native.js`); non si perdono pulendo la cache.
 - Progressi: copia automatica in `Documenti/LongLong/progressi-longlong.json` (ogni modifica, con 8 s di attesa) + account cloud.
 - Dopo `npm install` in `native/`: `npx cap sync`.
+
+## La mia voce (madrelingua)
+Profilo → "La mia voce": registra le parole (16 kHz, restano sul telefono in IndexedDB), prova subito toni e suoni, e con "Esporta" scarichi un unico file `mia-voce-longlong-DATA.json` (audio + risultati). Si può usare al posto della voce sintetica ("Usa la mia voce").
+
+## iPhone: microfono nativo e riconoscimento di Apple (plugin `longlong-speech`)
+Su un Mac con Xcode, da `native/`:
+1. `npm install`
+2. `npx cap add ios` (una volta sola)
+3. `npm run www && npx cap sync ios`
+4. `npm run prepare:platforms` (aggiunge le frasi del microfono e del riconoscimento vocale in Info.plist; vale anche per Android: RECORD_AUDIO)
+5. `npx cap open ios`: in Xcode scegli il tuo team (Signing & Capabilities) e premi Run sul telefono.
+
+Cosa cambia solo nell'app: il microfono dà campioni grezzi (senza filtri del browser) e i suoni vengono riconosciuti da Apple (cinese, sul dispositivo se disponibile).
+Se Apple non è disponibile, ricade su Vosk; sul sito e su Android non cambia nulla. La parola attesa NON viene passata ad Apple come suggerimento, così non "corregge" una pronuncia sbagliata.
+Il codice Swift è in `native/plugins/longlong-speech/ios/Plugin/`.
+
+## Codemagic (compilare senza Mac)
+`codemagic.yaml` è nella radice. Collega il repository a Codemagic: parti da **ios-prova** (non serve l'account Apple) per vedere se il codice Swift compila; poi **android-prova** per un APK; **ios-testflight** solo con l'account Apple Developer. Imposta le variabili del gruppo `longlong` (PACK_URL, RC_KEY_IOS, RC_KEY_ANDROID). Il modello Vosk (`models/vosk-cn.tar.gz`) non è nel repository: serve solo ad Android.
