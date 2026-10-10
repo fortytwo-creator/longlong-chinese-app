@@ -29,7 +29,7 @@ public class LongLongSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
 
     // MARK: permessi
 
-    @objc func requestPermissions(_ call: CAPPluginCall) {
+    @objc override public func requestPermissions(_ call: CAPPluginCall) {
         let session = AVAudioSession.sharedInstance()
         session.requestRecordPermission { micOK in
             SFSpeechRecognizer.requestAuthorization { status in
