@@ -65,21 +65,22 @@ Serve per l'uso offline e per non dover pubblicare la chiave Azure.
 
 La cartella `native/` incarta lo stesso codice come app dello store. Prima serve fare una volta sola sul tuo PC (Node.js installato):
 
-1. **Audio**: `node tools/make-audio.cjs` (con la chiave Azure, vedi sopra), poi `node tools/split-audio.cjs`.
-   - `audio/` = solo le lezioni 1-20 e le prime 50 parole: **va dentro l'app**.
-   - `audio-premium/` = tutto il resto: caricalo su un hosting (anche questo sito Netlify: `https://TUOSITO.netlify.app/audio-premium/`). L'app lo scarica **dopo l'acquisto**. Su un hosting pubblico chiunque conosca l'indirizzo può scaricarlo: per proteggerlo serve un hosting con accesso controllato (Firebase Storage con regole, ecc.).
+1. **Audio**: `node tools/make-audio.cjs` (con la chiave Azure, vedi sopra). Nella versione degli store **tutto l'audio sta dentro l'app** (circa 15-20 MB, controlla `du` della cartella `audio/`): non serve nessun server né pacchetto da scaricare. Se hai fatto `split-audio`, `native/scripts/build-www.cjs` unisce da solo `audio-premium/` all'audio dell'app.
 2. **Riconoscimento di consonanti e vocali** (facoltativo ma consigliato): scarica `vosk-model-small-cn-0.22.zip` da https://alphacephei.com/vosk/models, scompattalo, rinomina la cartella in `model`, poi `tar -czf vosk-cn.tar.gz model` e metti il file in `models/vosk-cn.tar.gz` (circa 40 MB, resta dentro l'app così funziona offline anche nel piano gratuito). Senza il modello "Ripeti" controlla solo i toni.
 3. Dalla cartella `native`:
    ```
    npm install
-   set PACK_URL=https://TUOSITO.netlify.app/audio-premium/
-   set RC_KEY_ANDROID=chiave_pubblica_revenuecat
    npm run www
    npx cap add android
    npm run android        (si apre Android Studio: Run per provare, poi Build > Generate Signed Bundle per Google Play)
    ```
-4. Acquisto dentro l'app: crea l'account RevenueCat, collega Google Play, crea un prodotto, mettilo nell'offerta "current" e dai al permesso (entitlement) il nome `premium`. Il codice è in `js/billing.js`. Nell'app dello store il codice di attivazione sparisce e compare il bottone Acquista.
-5. iPhone: serve un Mac (o un servizio di build come Codemagic) e l'account Apple Developer. Su iPhone il pacchetto a pagamento scaricato dopo l'acquisto non è ancora gestito (il service worker non gira lì): per ora procedi con Android.
+   Variabili facoltative prima di `npm run www`: `PRODUCT_ID` (identificativo dell'acquisto) e `ACCOUNT=1` (rimette l'account cloud, serve Supabase).
+4. **Acquisto dentro l'app, senza servizi esterni** (`js/billing.js`, plugin gratuito `cordova-plugin-purchase`). Un solo prodotto **non consumabile** con lo stesso identificativo sui due store (di serie `it.longlong.chinese.premium`, cambiabile con `PRODUCT_ID`):
+   - Apple: App Store Connect → la tua app → Monetizzazione → In-App Purchases → *Non consumabile*, ID prodotto uguale, prezzo, nome e schermata di revisione.
+   - Google: Play Console → la tua app → Monetizza → Prodotti → Prodotti in-app, ID uguale, prezzo, attivo. Per provare servono tester di licenza e una build caricata su un canale di test.
+   Il piano completo si salva sul telefono. Per un nuovo telefono c'è il pulsante "Ho già acquistato" (richiesto da Apple). Non c'è nessun server che conosca gli acquisti.
+5. **Costi fissi dopo la pubblicazione:** nessuno oltre agli account degli store. Niente account cloud (nascosto nella versione degli store), niente hosting dell'audio, niente RevenueCat. Il backup è quello automatico del telefono (iCloud / Google) più l'esportazione manuale nel Profilo.
+6. iPhone: serve un Mac o Codemagic (vedi sotto) e l'account Apple Developer.
 
 Cosa NON ho potuto provare: la compilazione con Android Studio, un acquisto vero, il modello Vosk vero (il test è stato fatto con un riconoscitore finto che restituisce il testo che gli dico io). Quando lo provi sul telefono, scrivimi cosa succede.
 
@@ -133,4 +134,4 @@ Se Apple non è disponibile, ricade su Vosk; sul sito e su Android non cambia nu
 Il codice Swift è in `native/plugins/longlong-speech/ios/Plugin/`.
 
 ## Codemagic (compilare senza Mac)
-`codemagic.yaml` è nella radice. Collega il repository a Codemagic: parti da **ios-prova** (non serve l'account Apple) per vedere se il codice Swift compila; poi **android-prova** per un APK; **ios-testflight** solo con l'account Apple Developer. Imposta le variabili del gruppo `longlong` (PACK_URL, RC_KEY_IOS, RC_KEY_ANDROID). Il modello Vosk (`models/vosk-cn.tar.gz`) non è nel repository: serve solo ad Android.
+`codemagic.yaml` è nella radice. Collega il repository a Codemagic: parti da **ios-prova** (non serve l'account Apple) per vedere se il codice Swift compila; poi **android-prova** per un APK; **ios-testflight** solo con l'account Apple Developer. Non servono variabili (solo `PRODUCT_ID`, facoltativa). Il modello Vosk (`models/vosk-cn.tar.gz`) non è nel repository: serve solo ad Android.

@@ -1,6 +1,6 @@
 /* 龙龙中文 - schermate, corso guidato (100 lezioni) e dojo. Tutti i pulsanti usano la delega degli eventi. */
 (function () {
-  window.APP_VERSION = '2026-10-10 · ios 1';
+  window.APP_VERSION = '2026-10-10 · store 1';
   'use strict';
 
   var Ut = window.Util, Steps = window.Steps, A = window.AudioKit, S = window.Store, Ent = window.Ent, Off = window.Offline, P = window.Pitch;
@@ -199,9 +199,10 @@
         '<input type="file" id="restoreFile" accept="application/json,.json" hidden></div>';
       html += '<h3 class="sec">La mia voce</h3><div class="card form"><p class="lead">Sei madrelingua? Registra le parole con la tua voce: l\'app prova subito se riconosce toni e suoni, e puoi usarle al posto della voce sintetica. Le registrazioni restano sul telefono.</p><p class="lead" id="voiceTxt"></p>' +
         '<button class="btn primary" data-act="voicestudio">🎙️ Registra la mia voce</button><button class="btn soft" data-act="voiceuse">' + (p.useMyVoice ? '✓ Uso la mia voce (tocca per spegnere)' : 'Usa la mia voce per l\'ascolto') + '</button></div>';
-      html += '<h3 class="sec">Account</h3><div class="card form" id="acctCard">' + accountInner() + '</div>';
+      if (!(window.CONFIG || {}).noAccount) html += '<h3 class="sec">Account</h3><div class="card form" id="acctCard">' + accountInner() + '</div>';
 
-      html += '<h3 class="sec">Usare l\'app senza internet</h3><div class="card form dl">' +
+      if (inAppAll()) html += '<h3 class="sec">Senza internet</h3><div class="card form"><p class="lead">✅ Tutto è già dentro l\'app: lezioni, audio e caratteri funzionano anche senza internet.</p></div>';
+      else html += '<h3 class="sec">Usare l\'app senza internet</h3><div class="card form dl">' +
         '<p class="lead" id="swState">Controllo…</p>' +
         '<div class="dl-row"><span>🔊 Audio e caratteri (<span id="dlPack">' + (prem ? 'tutto' : 'lezioni gratuite') + '</span>)</span><b id="dlTxt">…</b></div>' +
         '<div class="bar"><i id="dlBar" style="width:0%"></i></div>' +
@@ -228,7 +229,12 @@
     if (!window.Voice) return;
     Voice.init().then(function () { var el = $('#voiceTxt'); if (el) el.textContent = Voice.count() ? '🎙️ Parole registrate: ' + Voice.count() + ' / ' + (window.VOCAB || []).length : 'Nessuna parola registrata.'; });
   }
+  /* versione degli store con tutto l'audio dentro: niente da scaricare */
+  function inAppAll() { var C = window.CONFIG || {}; return !!C.assetsBundled && !C.packUrl; }
+  function isNativeApp() { var K = window.Capacitor; return !!(K && K.isNativePlatform && K.isNativePlatform()); }
   function showPersist() {
+    var el0 = $('#persistTxt');
+    if (el0 && isNativeApp()) { el0.textContent = '📲 I dati restano nell\'app. Se cambi telefono, il backup automatico del telefono (iCloud o Google) li porta con sé; in più puoi scaricare il backup qui sotto.'; return; }
     var el = $('#persistTxt'); if (!el || !navigator.storage || !navigator.storage.persisted) return;
     navigator.storage.persisted().then(function (ok) { var e2 = $('#persistTxt'); if (e2) e2.textContent = ok ? '🔒 Il telefono ha promesso di non cancellare questi dati da solo.' : '⚠️ Il telefono potrebbe cancellare questi dati se ha poco spazio: scarica un backup.'; }).catch(function () { /* ignora */ });
   }
@@ -554,7 +560,9 @@
       t.disabled = true;
       fn().then(function (ok) {
         if (!ok) { t.disabled = false; $('#pwErr').textContent = t.dataset.pw === 'buy' ? 'Acquisto non completato.' : 'Nessun acquisto trovato.'; return; }
-        Ent.set(true); closeSheet(); toast('💎 Piano completo attivato! Scarico le lezioni…');
+        Ent.set(true); closeSheet();
+        if (inAppAll()) { toast('💎 Piano completo attivato!'); return; }
+        toast('💎 Piano completo attivato! Scarico le lezioni…');
         Off.download('full', S.get().profile.voice, function () {}).then(function (r) { toast(r.failed ? '⚠️ Alcuni file non scaricati: riprova da Profilo' : '✅ Tutto scaricato'); }).catch(function (er) { toast('⚠️ ' + er.message); });
       }).catch(function (er) { t.disabled = false; $('#pwErr').textContent = 'Errore: ' + (er && er.message ? er.message : er); });
     };
@@ -681,7 +689,7 @@
     },
     reset: function (t) {
       if (!resetArmed) { resetArmed = true; t.textContent = 'Tocca ancora per confermare'; setTimeout(function () { resetArmed = false; if (t.isConnected) t.textContent = 'Azzera i progressi'; }, 3500); return; }
-      S.reset(); if (window.Cloud) Cloud.forcePush(); resetArmed = false; go('home'); toast('Progressi azzerati');
+      S.reset(); if (window.Cloud && !(window.CONFIG || {}).noAccount) Cloud.forcePush(); resetArmed = false; go('home'); toast('Progressi azzerati');
     }
   };
 
@@ -713,9 +721,9 @@
     navigator.serviceWorker.register('sw.js').then(function () { return navigator.serviceWorker.ready; }).then(function () { if (state.name === 'profile') refreshOffline(); }).catch(function () { /* facoltativo */ });
   }
 
-  if (window.Cloud) Cloud.onChange(function () { var el = $('#acctCard'); if (el) el.innerHTML = accountInner(); updateHeader(); });
+  if (window.Cloud && !(window.CONFIG || {}).noAccount) Cloud.onChange(function () { var el = $('#acctCard'); if (el) el.innerHTML = accountInner(); updateHeader(); });
 
-  if (window.Cloud) Cloud.fromLink().then(function (ok) { if (ok) { toast('☁️ Account collegato!'); render(); } else if (Cloud.lastError()) toast('⚠️ ' + Cloud.lastError()); });
+  if (window.Cloud && !(window.CONFIG || {}).noAccount) Cloud.fromLink().then(function (ok) { if (ok) { toast('☁️ Account collegato!'); render(); } else if (Cloud.lastError()) toast('⚠️ ' + Cloud.lastError()); });
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () { /* ignora */ });
 
   window.__app = { go: go, runLesson: runLesson, showPaywall: showPaywall };

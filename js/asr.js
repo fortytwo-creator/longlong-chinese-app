@@ -24,7 +24,7 @@
   }
   function initApple(P) {
     return P.requestPermissions().then(function (p) { if (!p || !p.speech) throw new Error('permesso negato'); return P.isAvailable({ locale: 'zh-CN' }); })
-      .then(function (a) { if (!a || !a.available) throw new Error('Apple non disponibile'); engine = 'apple'; state = 'ready'; return true; });
+      .then(function (a) { if (!a || !a.available) throw new Error('Apple non disponibile'); if (!a.onDevice) throw new Error('Apple non può riconoscere sul telefono: non invio la voce di un bambino a server esterni'); engine = 'apple'; state = 'ready'; return true; });
   }
 
   /* Carica il modello (una volta sola). Promise<bool>: true se il riconoscimento è pronto. */

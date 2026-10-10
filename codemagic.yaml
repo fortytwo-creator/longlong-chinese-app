@@ -1,18 +1,15 @@
 # Codemagic: compila l'app 龙龙中文 per iPhone e Android partendo dal repository.
 # Prima di tutto lancia "ios-prova" (non serve l'account Apple Developer): dice se il codice Swift compila.
-# Variabili da impostare in Codemagic (Team/App → Environment variables, gruppo "longlong"):
-#   PACK_URL        indirizzo dove hai messo audio-premium/ (con / finale), es. https://tuosito.netlify.app/audio-premium/
-#   RC_KEY_IOS      chiave RevenueCat per iOS (anche vuota, per ora)
-#   RC_KEY_ANDROID  chiave RevenueCat per Android (anche vuota, per ora)
-# Il repository deve avere la cartella audio/ (audio gratuito): è dentro l'app.
+# Variabili facoltative (Codemagic → Environment variables):
+#   PRODUCT_ID      (facoltativa) identificativo dell'acquisto negli store; se manca vale it.longlong.chinese.premium
+# Nessun altro segreto: l'app è senza server (niente account, tutto l'audio dentro, acquisto dagli store).
+# Il repository deve avere la cartella audio/ con TUTTO l'audio (se hai anche audio-premium/, viene unito da solo).
 
 definitions:
   env_native: &env_native
     node: 20
     xcode: latest
     cocoapods: default
-    groups:
-      - longlong
   prepara_nativo: &prepara_nativo
     name: Prepara l'app (npm, pagine, piattaforma)
     script: |
@@ -93,8 +90,6 @@ workflows:
     environment:
       node: 20
       java: 17
-      groups:
-        - longlong
     scripts:
       - *prepara_nativo
       - name: Aggiungi Android e permessi

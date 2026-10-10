@@ -1,7 +1,7 @@
 /* Service worker: l'app funziona anche senza internet.
    - guscio dell'app (pagine, script, font, icone): prima la rete (così gli aggiornamenti arrivano subito), poi la copia salvata
    - audio e tratti dei caratteri: prima la copia scaricata (pacchetto offline), poi la rete */
-var CACHE = 'longlong-v18';
+var CACHE = 'longlong-v20';
 var MEDIA = 'longlong-media-v1';
 var FILES = ['./', 'index.html', 'style.css', 'config.js', 'manifest.json',
   'js/vocab.js', 'js/data.js', 'js/lessons.js', 'js/course.js', 'js/store.js', 'js/entitlement.js', 'js/native.js', 'js/voice.js', 'js/cloud.js', 'js/pitch.js', 'js/phon.js', 'js/asr.js', 'js/audio.js',
