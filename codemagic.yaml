@@ -55,7 +55,7 @@ workflows:
         distribution_type: app_store
         bundle_identifier: it.longlong.chinese
       vars:
-        APP_STORE_APPLE_ID: "0"              # sostituisci con l'ID numerico dell'app in App Store Connect
+        APP_STORE_APPLE_ID: "6821333371"      # ID numerico dell app in App Store Connect (è nell indirizzo della pagina: /apps/<numero>/)
     scripts:
       - *prepara_nativo
       - name: Aggiungi iOS e permessi
