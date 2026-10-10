@@ -533,11 +533,7 @@
         if (parseInt($('#gateIn').value, 10) !== a * b) { $('#pwErr').textContent = 'Non è giusto, riprova.'; return; }
         var C = window.CONFIG || {};
         if (window.Billing && Billing.available()) return showBuy(body);
-        body.innerHTML = '<div class="paywall"><div class="gem">🔑</div><h2>Codice di attivazione</h2><p class="lead">Inserisci il codice del piano completo.</p>' +
-          '<input id="codeIn" placeholder="CODICE" autocomplete="off" autocapitalize="characters"><div class="err" id="pwErr"></div>' +
-          '<button class="btn primary" data-pw="code">Attiva</button>' +
-          (C.buyUrl ? '<a class="btn soft" style="text-decoration:none;text-align:center" href="' + esc(C.buyUrl) + '" target="_blank" rel="noopener">Acquista il codice</a>' : '') +
-          '<button class="btn soft" data-act="close">Annulla</button></div>';
+        showCodeForm(body, C);
       } else if (t.dataset.pw === 'code') {
         if (Ent.activate($('#codeIn').value)) { toast('💎 Piano completo attivato!'); closeSheet(); }
         else $('#pwErr').textContent = 'Codice non valido.';
@@ -545,17 +541,32 @@
     };
   }
 
+  function showCodeForm(body, C) {
+    C = C || window.CONFIG || {};
+    body.innerHTML = '<div class="paywall"><div class="gem">🔑</div><h2>Codice di attivazione</h2><p class="lead">Inserisci il codice del piano completo.</p>' +
+      '<input id="codeIn" placeholder="CODICE" autocomplete="off" autocapitalize="characters"><div class="err" id="pwErr"></div>' +
+      '<button class="btn primary" data-pw="code">Attiva</button>' +
+      (C.buyUrl ? '<a class="btn soft" style="text-decoration:none;text-align:center" href="' + esc(C.buyUrl) + '" target="_blank" rel="noopener">Acquista il codice</a>' : '') +
+      '<button class="btn soft" data-act="close">Annulla</button></div>';
+  }
+
   /* acquisto dentro l'app (versione degli store) */
   function showBuy(body) {
     Billing.init().then(function () {
       body.innerHTML = '<div class="paywall"><div class="gem">💎</div><h2>Piano completo</h2><p class="lead">Un solo acquisto: tutte le lezioni e tutte le parole, anche senza internet.</p>' +
         '<div class="err" id="pwErr"></div><button class="btn primary" data-pw="buy">Acquista' + (Billing.price() ? ' · ' + esc(Billing.price()) : '') + '</button>' +
-        '<button class="btn soft" data-pw="restore">Ho già acquistato</button><button class="btn soft" data-act="close">Annulla</button></div>';
+        '<button class="btn soft" data-pw="restore">Ho già acquistato</button><button class="btn soft" data-pw="havecode">Ho un codice</button><button class="btn soft" data-act="close">Annulla</button></div>';
     });
     body.onclick = function (e) {
       var t = e.target.closest('[data-pw]'), c = e.target.closest('[data-act="close"]');
       if (c) return closeSheet();
       if (!t) return;
+      if (t.dataset.pw === 'havecode') return showCodeForm(body);
+      if (t.dataset.pw === 'code') {
+        if (Ent.activate($('#codeIn').value)) { toast('💎 Piano completo attivato!'); closeSheet(); }
+        else $('#pwErr').textContent = 'Codice non valido.';
+        return;
+      }
       var fn = t.dataset.pw === 'buy' ? Billing.buy : Billing.restore;
       t.disabled = true;
       fn().then(function (ok) {

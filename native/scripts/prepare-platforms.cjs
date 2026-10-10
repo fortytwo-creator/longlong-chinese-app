@@ -32,3 +32,23 @@ if (fs.existsSync(man)) {
   if (changed) fs.writeFileSync(man, s);
   console.log('Android manifest:', changed ? 'permessi aggiunti' : 'già a posto');
 } else console.log('Android: cartella non trovata (esegui "npx cap add android").');
+
+/* ---------- icona dell'app ---------- */
+const res = path.join(root, 'resources');
+const set = path.join(root, 'ios', 'App', 'App', 'Assets.xcassets', 'AppIcon.appiconset');
+if (fs.existsSync(set)) {
+  let name = 'AppIcon-512@2x.png';
+  try { const c = JSON.parse(fs.readFileSync(path.join(set, 'Contents.json'), 'utf8')); const f = (c.images || []).map(i => i.filename).filter(Boolean)[0]; if (f) name = f; } catch (e) { /* usa il nome standard */ }
+  fs.copyFileSync(path.join(res, 'ios', 'AppIcon-1024.png'), path.join(set, name));
+  console.log('iOS icona:', name);
+}
+const droid = path.join(root, 'android', 'app', 'src', 'main', 'res');
+if (fs.existsSync(droid)) {
+  ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'].forEach(k => ['ic_launcher.png', 'ic_launcher_round.png'].forEach(f => {
+    const d = path.join(droid, 'mipmap-' + k); fs.mkdirSync(d, { recursive: true });
+    fs.copyFileSync(path.join(res, 'android', 'mipmap-' + k, f), path.join(d, f));
+  }));
+  fs.rmSync(path.join(droid, 'mipmap-anydpi-v26'), { recursive: true, force: true }); // l'icona adattiva di Capacitor coprirebbe la nostra
+  ['ic_launcher_foreground.xml'].forEach(f => fs.rmSync(path.join(droid, 'drawable-v24', f), { force: true }));
+  console.log('Android icona: aggiornata');
+}

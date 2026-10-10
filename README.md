@@ -36,7 +36,7 @@ Serve per l'uso offline e per non dover pubblicare la chiave Azure.
 
 ## 3) Piano gratuito / completo
 - `js/entitlement.js` contiene l'interruttore. Il piano completo si attiva dal Profilo (o dal paywall) con un **codice**; prima c'è un controllo "per i genitori" (una moltiplicazione).
-- Codice di prova: `DRAGO-2026` (cambialo!). Per crearne uno: `node tools/make-code.cjs IL-MIO-CODICE` e incolla l'impronta in `PREMIUM_HASHES`.
+- Codice di prova: `(codice di prova rimosso: usa tools/make-code.cjs --nuovi)` (cambialo!). Per crearne uno: `node tools/make-code.cjs IL-MIO-CODICE` e incolla l'impronta in `PREMIUM_HASHES`.
 - **Attenzione:** il controllo è sul telefono, quindi chi sa programmare può aggirarlo. Per incassare davvero serve un servizio esterno che emetta i codici
   (negozio app, Stripe con una funzione server, ecc.). `buyUrl` in `config.js` è il link "Acquista il codice" (facoltativo).
 
