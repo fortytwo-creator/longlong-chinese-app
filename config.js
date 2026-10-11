@@ -6,8 +6,8 @@
    - assetsBundled: true solo nella versione per gli store (audio gratis e tratti dei caratteri sono dentro l'app).
    - buyUrl: indirizzo della pagina dove i genitori comprano il codice del piano completo (facoltativo). */
 (function () {
-  var SUPABASE_URL = 'https://rppkvbtyfobteywaollz.supabase.co';   // es. 'https://abcdefgh.supabase.co'   (Supabase > Project Settings > API > Project URL)
-  var SUPABASE_KEY = 'sb_publishable_LR94C3CobSTPLXrO1cpCwg_nIvw5r-2';   // la chiave PUBBLICA: 'sb_publishable_...' (o la "anon"). MAI la "secret" / "service_role".
+  var SUPABASE_URL = '';   // es. 'https://abcdefgh.supabase.co'   (Supabase > Project Settings > API > Project URL)
+  var SUPABASE_KEY = '';   // la chiave PUBBLICA: 'sb_publishable_...' (o la "anon"). MAI la "secret" / "service_role".
   function ls(k) { try { return localStorage.getItem('CONFIG_' + k); } catch (e) { return null; } }
   window.CONFIG = {
     azureKey: ls('azureKey') || '',

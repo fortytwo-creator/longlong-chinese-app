@@ -155,7 +155,7 @@
         else if (a === 'tone') { markHeard(+t.dataset.n); say(MA[+t.dataset.n - 1].zh); }
         else if (a === 'all') {
           var list = MA.map(function (it) { return it.zh; }), j = 0;
-          (function step() { if (ended || nodes[k].page !== 'tones' || j >= list.length) return; markHeard(j + 1); say(list[j]).then(function () { j++; setTimeout(step, 300); }); })();
+          (function step() { if (ended || nodes[k].page !== 'tones' || j >= list.length) return; markHeard(j + 1); say(list[j]).then(function () { j++; setTimeout(step, 150); }); })();
         }
       };
     }

@@ -1,6 +1,6 @@
 /* 龙龙中文 - schermate, corso guidato (100 lezioni) e dojo. Tutti i pulsanti usano la delega degli eventi. */
 (function () {
-  window.APP_VERSION = '2026-10-11 · store 2';
+  window.APP_VERSION = '2026-10-12 · store 3';
   'use strict';
 
   var Ut = window.Util, Steps = window.Steps, A = window.AudioKit, S = window.Store, Ent = window.Ent, Off = window.Offline, P = window.Pitch;
@@ -61,7 +61,7 @@
     return '<button class="word" data-act="say" data-id="' + w.id + '"><span class="w-em">' + w.em + '</span><span class="w-mid"><span class="w-zh">' + zhHtml(w) + '</span><span class="w-py">' + pyHtml(w) + '</span></span><span class="w-it">' + esc(w.it) + '</span><span class="w-sp">🔊</span></button>';
   }
   function planCard() {
-    if (Ent.isPremium()) return '<div class="plan-card"><span>💎</span><div><b>Piano completo attivo</b><small>' + N + ' lezioni · ' + ALL.length + ' parole</small></div></div>';
+    if (Ent.isPremium()) return '';
     return '<button class="plan-card" data-act="paywall"><span>💎</span><div><b>Piano gratuito: ' + FREE_N + ' lezioni · ' + total() + ' parole</b><small>Sblocca tutte le ' + N + ' lezioni e le ' + ALL.length + ' parole</small></div></button>';
   }
 
@@ -187,7 +187,9 @@
       html += '</div><div class="lbl">Obiettivo giornaliero</div><div class="chips">';
       [1, 3, 5].forEach(function (g) { html += '<button class="chip wide' + (g === p.goal ? ' on' : '') + '" data-act="goal" data-id="' + g + '">' + g + ' attività</button>'; });
       html += '</div><div class="lbl">Voce</div><div class="chips"><button class="chip wide' + (p.voice === 'FEMALE' ? ' on' : '') + '" data-act="voice" data-id="FEMALE">👩 Xiaoxiao</button>' +
-        '<button class="chip wide' + (p.voice === 'MALE' ? ' on' : '') + '" data-act="voice" data-id="MALE">👨 Yunxi</button></div></div>';
+        '<button class="chip wide' + (p.voice === 'MALE' ? ' on' : '') + '" data-act="voice" data-id="MALE">👨 Yunxi</button></div>' +
+        '<div class="lbl">Effetti sonori</div><div class="chips"><button class="chip wide' + (p.sfx !== false ? ' on' : '') + '" data-act="sfx" data-id="1">🔔 Attivi</button>' +
+        '<button class="chip wide' + (p.sfx === false ? ' on' : '') + '" data-act="sfx" data-id="0">🔕 Spenti</button></div></div>';
 
       html += '<h3 class="sec">Piano</h3><div class="card form">' + (prem
         ? '<p class="lead">💎 Piano completo attivo: ' + N + ' lezioni e ' + ALL.length + ' parole.</p><button class="btn soft" data-act="deactivate">Torna al piano gratuito (prova)</button>'
@@ -537,7 +539,7 @@
         if (window.Billing && Billing.available()) return showBuy(body);
         showCodeForm(body, C);
       } else if (t.dataset.pw === 'code') {
-        if (Ent.activate($('#codeIn').value)) { toast('💎 Piano completo attivato!'); closeSheet(); }
+        if (Ent.activate($('#codeIn').value)) { closeSheet(); render(); celebrate(); }
         else $('#pwErr').textContent = 'Codice non valido.';
       }
     };
@@ -552,6 +554,8 @@
       '<button class="btn soft" data-act="close">Annulla</button></div>';
   }
 
+  function celebrate() { if (window.Fx) Fx.confetti(); }
+
   /* acquisto dentro l'app (versione degli store) */
   function showBuy(body) {
     Billing.init().then(function () {
@@ -565,7 +569,7 @@
       if (!t) return;
       if (t.dataset.pw === 'havecode') return showCodeForm(body);
       if (t.dataset.pw === 'code') {
-        if (Ent.activate($('#codeIn').value)) { toast('💎 Piano completo attivato!'); closeSheet(); }
+        if (Ent.activate($('#codeIn').value)) { closeSheet(); render(); celebrate(); }
         else $('#pwErr').textContent = 'Codice non valido.';
         return;
       }
@@ -573,9 +577,9 @@
       t.disabled = true;
       fn().then(function (ok) {
         if (!ok) { t.disabled = false; $('#pwErr').textContent = t.dataset.pw === 'buy' ? 'Acquisto non completato.' : 'Nessun acquisto trovato.'; return; }
-        Ent.set(true); closeSheet();
-        if (inAppAll()) { toast('💎 Piano completo attivato!'); return; }
-        toast('💎 Piano completo attivato! Scarico le lezioni…');
+        Ent.set(true); closeSheet(); render(); celebrate();
+        if (inAppAll()) return;
+        toast('Scarico le lezioni…');
         Off.download('full', S.get().profile.voice, function () {}).then(function (r) { toast(r.failed ? '⚠️ Alcuni file non scaricati: riprova da Profilo' : '✅ Tutto scaricato'); }).catch(function (er) { toast('⚠️ ' + er.message); });
       }).catch(function (er) { t.disabled = false; $('#pwErr').textContent = 'Errore: ' + (er && er.message ? er.message : er); });
     };
@@ -668,6 +672,7 @@
     tocourse: function () { closeSheet(); go('course'); },
     close: closeSheet,
     again: function () { if (sheet.again) sheet.again(); },
+    sfx: function (t) { S.get().profile.sfx = t.dataset.id === '1'; S.save(); render(); if (window.Fx && t.dataset.id === '1') Fx.tick(); },
     avatar: function (t) { S.get().profile.avatar = t.dataset.id; S.save(); render(); },
     goal: function (t) { S.get().profile.goal = +t.dataset.id; S.save(); render(); },
     voice: function (t) { S.get().profile.voice = t.dataset.id; S.save(); render(); say('你好'); },

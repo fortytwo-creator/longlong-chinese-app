@@ -67,7 +67,7 @@
   }
   function sayAll(list, i) {
     i = i || 0; if (i >= list.length) return Promise.resolve();
-    return say(list[i]).then(function () { return new Promise(function (r) { setTimeout(r, 350); }); }).then(function () { return sayAll(list, i + 1); });
+    return say(list[i]).then(function () { return new Promise(function (r) { setTimeout(r, 175); }); }).then(function () { return sayAll(list, i + 1); });
   }
 
   window.Util = { esc: esc, shuffle: shuffle, pick: pick, $: $, toneOf: toneOf, toneColor: toneColor, zhHtml: zhHtml, pyHtml: pyHtml,
