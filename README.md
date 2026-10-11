@@ -142,3 +142,9 @@ Il codice Swift è in `native/plugins/longlong-speech/ios/Plugin/`.
 Percorso: benvenuto → i 4 toni (si ascoltano tutti) → riconosci il tono → ripeti 妈 麻 马 骂 e 你好 → ordine dei tratti (animazione di 中 con numeri e frecce) → significato di 中文 → scrivi 中 e 文 → home con la scritta BENVENUTO.
 - **Ripeti** e **Scrivi** usano le attività del corso in modalità `strict`: se il tono/suono non è giusto non si passa; il tasto "Salta" compare dopo 3 errori (`SKIP_AFTER` in `js/intro.js`).
 - Non servono audio nuovi: la scrittura di 中 e 文 è silenziosa (`silent`), gli altri audio esistono già.
+
+## Controllo "funziona senza internet"
+
+Prima di ogni build per gli store, dalla cartella del progetto:  `node tools/check-offline.cjs`
+Controlla audio (voce femminile e maschile) di tutti i testi, tratti di tutti i caratteri da scrivere, modello vocale (Android), icone e librerie locali.
+Poi una prova vera: modalità aereo, apri l'app, fai l'introduzione, una lezione, "Ripeti" e "Scrivi". Solo l'acquisto e il ripristino dell'acquisto richiedono la rete.
