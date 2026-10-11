@@ -1,6 +1,6 @@
 /* 龙龙中文 - schermate, corso guidato (100 lezioni) e dojo. Tutti i pulsanti usano la delega degli eventi. */
 (function () {
-  window.APP_VERSION = '2026-10-10 · store 1';
+  window.APP_VERSION = '2026-10-11 · store 2';
   'use strict';
 
   var Ut = window.Util, Steps = window.Steps, A = window.AudioKit, S = window.Store, Ent = window.Ent, Off = window.Offline, P = window.Pitch;
@@ -212,6 +212,7 @@
 
       html += '<h3 class="sec">Per i genitori</h3><div class="card form">' +
         '<button class="btn soft" data-act="unlock">' + (p.unlockAll ? '🔓 Lezioni in qualsiasi ordine (tocca per bloccare)' : '🔒 Sblocca l\'ordine delle lezioni del piano') + '</button>' +
+        '<button class="btn soft" data-act="intro">🎓 Rivedi l\'introduzione</button>' +
         '<button class="btn soft" data-act="testaudio">🔊 Prova l\'audio</button><p id="audioDiag" class="lead"></p>' +
         '<button class="btn soft" data-act="testmic">🎤 Prova il microfono</button><p id="micDiag" class="lead"></p>' +
         '<button class="btn soft" data-act="testicon">🖼️ Controlla l\'icona dell\'app</button><p id="iconDiag" class="lead diag"></p>' +
@@ -242,12 +243,13 @@
   /* ---------- finestra attività ---------- */
   var sheet = { again: null, cleanup: null };
   function openSheet(title) {
-    runCleanup(); $('#sheet').hidden = false; document.body.classList.add('lock');
+    dropIntroFoot(); runCleanup(); $('#sheet').hidden = false; document.body.classList.add('lock');
     $('#sTitle').textContent = title; $('#sProg').style.width = '0%'; $('#sBody').innerHTML = ''; $('#sBody').onclick = null;
     $('#sBody').scrollTop = 0; return $('#sBody');
   }
   function runCleanup() { if (sheet.cleanup) { try { sheet.cleanup(); } catch (e) { /* ignora */ } sheet.cleanup = null; } }
-  function closeSheet() { A.stop(); runCleanup(); $('#sheet').hidden = true; document.body.classList.remove('lock'); render(); }
+  function dropIntroFoot() { var f = document.getElementById('introFoot'); if (f && f.parentNode) f.parentNode.removeChild(f); }
+  function closeSheet() { A.stop(); dropIntroFoot(); runCleanup(); $('#sheet').hidden = true; document.body.classList.remove('lock'); render(); }
   function setProg(f) { $('#sProg').style.width = Math.round(100 * Math.max(0, Math.min(1, f))) + '%'; }
   function mkCtl(onDone, base, span) {
     return { progress: function (i, n) { setProg(base + span * (n ? i / n : 0)); }, done: onDone, cleanup: function (fn) { sheet.cleanup = fn; } };
@@ -612,8 +614,34 @@
   }
 
   /* ---------- eventi ---------- */
+  /* ---------- introduzione (primo avvio) ---------- */
+  function showWelcome() {
+    var el = document.createElement('div'); el.id = 'welcome';
+    el.innerHTML = '<div><small>欢迎</small><b>BENVENUTO</b></div>';
+    el.onclick = function () { if (el.parentNode) el.parentNode.removeChild(el); };
+    document.body.appendChild(el);
+    setTimeout(function () { el.classList.add('out'); }, 2600);
+    setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 3400);
+  }
+  function runIntro() {
+    if (!window.Intro) return;
+    var body = openSheet('龙龙中文'); sheet.again = null;
+    Intro.run(body, {
+      setProg: setProg, ctl: mkCtl, cleanup: runCleanup, onLeave: function (fn) { sheet.cleanup = fn; }, stop: function () { A.stop(); },
+      title: function (t) { $('#sTitle').textContent = t; },
+      onExit: function (skipped) {
+        var first = !S.get().profile.introDone;
+        S.get().profile.introDone = true;
+        if (!skipped && first) S.addReward(30, 5);
+        S.save(); closeSheet(); go('home');
+        if (!skipped) showWelcome();
+      }
+    });
+  }
+
   var resetArmed = false;
   var H = {
+    intro: runIntro,
     nav: function (t) { go(t.dataset.id); },
     unit: function (t) { var u = UBYID[t.dataset.id]; if (u.words.filter(Ent.wordOpen.bind(Ent)).length < 2) return showPaywall(); go('unit', t.dataset.id); },
     say: function (t) { var w = BYID[t.dataset.id]; if (w) say(w.zh); },
@@ -737,6 +765,12 @@
   if (window.Cloud && !(window.CONFIG || {}).noAccount) Cloud.fromLink().then(function (ok) { if (ok) { toast('☁️ Account collegato!'); render(); } else if (Cloud.lastError()) toast('⚠️ ' + Cloud.lastError()); });
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () { /* ignora */ });
 
-  window.__app = { go: go, runLesson: runLesson, showPaywall: showPaywall };
+  window.__app = { go: go, runLesson: runLesson, showPaywall: showPaywall, runIntro: runIntro };
+  /* chi ha già dei progressi non rivede l'introduzione da solo (la trova nel Profilo) */
+  (function () {
+    var P0 = S.get();
+    if (!P0.profile.introDone && (P0.xp || Object.keys(P0.words).length || Object.keys(P0.course.done).length)) { P0.profile.introDone = true; S.save(); }
+  })();
   render();
+  if (!S.get().profile.introDone) setTimeout(runIntro, 400);
 })();

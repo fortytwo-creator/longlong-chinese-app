@@ -135,3 +135,10 @@ Il codice Swift è in `native/plugins/longlong-speech/ios/Plugin/`.
 
 ## Codemagic (compilare senza Mac)
 `codemagic.yaml` è nella radice. Collega il repository a Codemagic: parti da **ios-prova** (non serve l'account Apple) per vedere se il codice Swift compila; poi **android-prova** per un APK; **ios-testflight** solo con l'account Apple Developer. Non servono variabili (solo `PRODUCT_ID`, facoltativa). Il modello Vosk (`models/vosk-cn.tar.gz`) non è nel repository: serve solo ad Android.
+
+## Introduzione al primo avvio
+
+`js/intro.js` parte da sola alla prima apertura (chi ha già progressi non la rivede da solo; dal Profilo c'è "Rivedi l'introduzione"; in ogni schermata c'è il link "Salta l'introduzione").
+Percorso: benvenuto → i 4 toni (si ascoltano tutti) → riconosci il tono → ripeti 妈 麻 马 骂 e 你好 → ordine dei tratti (animazione di 中 con numeri e frecce) → significato di 中文 → scrivi 中 e 文 → home con la scritta BENVENUTO.
+- **Ripeti** e **Scrivi** usano le attività del corso in modalità `strict`: se il tono/suono non è giusto non si passa; il tasto "Salta" compare dopo 3 errori (`SKIP_AFTER` in `js/intro.js`).
+- Non servono audio nuovi: la scrittura di 中 e 文 è silenziosa (`silent`), gli altri audio esistono già.

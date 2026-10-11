@@ -101,6 +101,7 @@
     window.TONE_SETS.forEach(function (set) { set.items.forEach(function (it) { add(it.zh); }); });
     window.TONE_PAIRS.forEach(function (p) { add(p.a); add(p.b); });
     add('你好，我是龙龙');
+    add('你好'); // introduzione al primo avvio (sempre gratuita)
     return Object.keys(out);
   };
 

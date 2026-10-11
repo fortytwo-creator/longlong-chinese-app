@@ -38,14 +38,14 @@
     if (out.length < n) shuffle(window.Ent ? window.Ent.words() : ALL).forEach(function (x) { if (out.length < n && !seen[x[key]]) { seen[x[key]] = 1; out.push(x); } });
     return out;
   }
-  function buildQuestions(words, pool, kinds, n, toneIt) {
+  function buildQuestions(words, pool, kinds, n, toneIt, seq) {
     var qs = [], deck = [], guard = 0;
     while (qs.length < n && guard++ < 200) {
       if (!deck.length) deck = shuffle(words);
       var w = deck.pop(), kind = pick(kinds);
       if (kind === 'tone') {
         if (!toneIt.length) continue;
-        var it = pick(toneIt);
+        var it = seq ? toneIt[qs.length % toneIt.length] : pick(toneIt);
         qs.push({ kind: 'tone', item: it, opts: [1, 2, 3, 4], answer: it.t });
       } else {
         var key = (kind === 'rev' || kind === 'listenzh') ? 'zh' : 'it';
@@ -59,7 +59,7 @@
   function quiz(body, cfg, ctl) {
     var pool = cfg.pool || cfg.words, toneIt = cfg.toneItems || U.toneItems(pool);
     var kinds = cfg.kinds.filter(function (k) { return k !== 'tone' || toneIt.length; });
-    var qs = buildQuestions(cfg.words, pool, kinds, cfg.n || 8, toneIt), i = 0, correct = 0, locked = -1, done = once(ctl.done), nextTimer = null;
+    var qs = buildQuestions(cfg.words, pool, kinds, cfg.n || 8, cfg.seqTones ? shuffle(toneIt) : toneIt, !!cfg.seqTones), i = 0, correct = 0, locked = -1, done = once(ctl.done), nextTimer = null;
     ctl.cleanup(function () { clearTimeout(nextTimer); });
     function show() {
       if (i >= qs.length) return done({ correct: correct, total: qs.length });
@@ -199,6 +199,7 @@
   }
 
   function write(body, cfg, ctl) {
+    var strict = !!cfg.strict, skipAfter = cfg.skipAfter || 3;
     var ws = cfg.words.filter(function (w) { return Array.from(w.zh).length <= 2; }).slice(0, cfg.max || 4), wi = 0, ci = 0, correct = 0, mistakes = 0, writer = null, done = once(ctl.done);
     if (!ws.length) return done({ correct: 0, total: 0 });
     if (!window.HanziWriter) {
@@ -212,8 +213,8 @@
       body.innerHTML = '<div class="w-prompt">' + w.em + ' <b>' + esc(w.it) + '</b><div>' + pyHtml(w) + '</div></div>' +
         '<div class="w-dots">' + chars.map(function (c, k) { return '<i class="' + (k < ci ? 'done' : k === ci ? 'cur' : '') + '"></i>'; }).join('') + '</div>' +
         '<div id="hz" class="hz"></div><p class="lead" id="hzMsg">Traccia il carattere seguendo i tratti.</p>' +
-        '<div class="row3"><button class="btn soft" data-w="hint">💡 Aiuto</button><button class="btn soft" data-w="anim">▶️ Mostra</button><button class="btn soft" data-w="skip">Salta</button></div>';
-      say(w.zh);
+        '<div class="row3"><button class="btn soft" data-w="hint">💡 Aiuto</button><button class="btn soft" data-w="anim">▶️ Mostra</button><button class="btn soft' + (strict && mistakes < skipAfter ? ' hide' : '') + '" id="wSkip" data-w="skip">Salta</button></div>';
+      if (!cfg.silent) say(w.zh);
       try {
         writer = HanziWriter.create(body.querySelector('#hz'), chars[ci], { width: 240, height: 240, padding: 12, showOutline: true, strokeColor: '#ff6b9d', outlineColor: '#e6dcd6', drawingWidth: 14, showCharacter: false, charDataLoader: strokeLoader,
           onLoadCharDataError: function () { var m = body.querySelector('#hzMsg'); if (m) m.textContent = 'Questo carattere non è ancora scaricato: scarica il pacchetto offline dal Profilo.'; } });
@@ -222,19 +223,19 @@
     }
     function startQuiz(w, chars) {
       writer.quiz({
-        onMistake: function () { mistakes++; },
+        onMistake: function () { mistakes++; var sb = body.querySelector('#wSkip'); if (strict && sb && mistakes >= skipAfter) sb.classList.remove('hide'); },
         onComplete: function () {
           ci++;
           if (ci < chars.length) { setTimeout(next, 400); }
-          else { var ok = mistakes <= 3 * chars.length; if (ok) correct++; S.markWord(w.id, ok); mistakes = 0; ci = 0; wi++; setTimeout(next, 700); }
+          else { var ok = mistakes <= 3 * chars.length; if (ok) correct++; if (w.id) S.markWord(w.id, ok); mistakes = 0; ci = 0; wi++; setTimeout(next, 700); }
         }
       });
     }
     body.onclick = function (e) {
       var t = e.target.closest('[data-w]'); if (!t || !writer) return; var a = t.dataset.w, w = ws[wi], chars = Array.from(w.zh);
-      if (a === 'hint') { mistakes++; writer.cancelQuiz(); writer.animateCharacter({ onComplete: function () { startQuiz(w, chars); } }); }
+      if (a === 'hint') { mistakes++; var sb2 = body.querySelector('#wSkip'); if (strict && sb2 && mistakes >= skipAfter) sb2.classList.remove('hide'); writer.cancelQuiz(); writer.animateCharacter({ onComplete: function () { startQuiz(w, chars); } }); }
       else if (a === 'anim') { writer.cancelQuiz(); writer.animateCharacter({ onComplete: function () { startQuiz(w, chars); } }); }
-      else if (a === 'skip') { S.markWord(w.id, false); ci = 0; mistakes = 0; wi++; next(); }
+      else if (a === 'skip') { if (w.id) S.markWord(w.id, false); ci = 0; mistakes = 0; wi++; next(); }
     };
     next();
   }
@@ -270,6 +271,8 @@
 
   function repeat(body, cfg, ctl) {
     var ws = cfg.words, i = 0, passed = 0, rec = null, mine = null, advancing = false, timer = null, fails = 0, targets = [], done = once(ctl.done), busy = false;
+    var strict = !!cfg.strict, skipAfter = cfg.skipAfter || 3; /* strict (introduzione): non si va avanti da soli, si riprova; "Salta" compare dopo alcuni errori */
+    function noteFail() { fails++; var sb = body.querySelector('#skipBtn'); if (strict && sb && fails >= skipAfter) sb.classList.remove('hide'); }
     ctl.cleanup(function () { clearTimeout(timer); if (rec) { rec.stop(); rec = null; } });
     function show() {
       advancing = false; mine = null; fails = 0; busy = false;
@@ -287,7 +290,7 @@
         '<p class="lead" id="tMsg">La linea tratteggiata è il tono da imitare. La tua voce sarà la linea rossa.</p><div class="chips-res" id="rChips"></div>' +
         '<div class="row2"><button class="btn soft" data-t="say">🔊 Ascolta</button><button class="btn soft" data-t="slow">🐢 Lento</button></div>' +
         '<button class="btn rec" id="recBtn" data-t="rec">🎤 Tocca, di\' la parola, tocca ancora</button>' +
-        '<div class="row2"><button class="btn soft hide" id="mineBtn" data-t="mine">▶️ Riascolta te</button><button class="btn soft" id="skipBtn" data-t="skip">Salta ›</button></div>';
+        '<div class="row2"><button class="btn soft hide" id="mineBtn" data-t="mine">▶️ Riascolta te</button><button class="btn soft' + (strict ? ' hide' : '') + '" id="skipBtn" data-t="skip">Salta ›</button></div>';
       drawAnalysis(body.querySelector('#cv'), targets, null);
     }
     function leave(ok) {
@@ -297,8 +300,8 @@
     }
     function feedback(res, w, ph) {
       var msg = body.querySelector('#tMsg'), chips = body.querySelector('#rChips'), skip = body.querySelector('#skipBtn');
-      if (!res.speech) { msg.innerHTML = '<b style="color:#d9534f">Non ti ho sentito.</b> Avvicinati al microfono, parla un po\' più forte e riprova.'; chips.innerHTML = ''; return; }
-      if (!res.ok) { msg.innerHTML = '<b style="color:#d9534f">Ho sentito poco.</b> Dì la parola con calma e a voce alta, poi tocca di nuovo.'; chips.innerHTML = ''; return; }
+      if (!res.speech) { noteFail(); msg.innerHTML = '<b style="color:#d9534f">Non ti ho sentito.</b> Avvicinati al microfono, parla un po\' più forte e riprova.'; chips.innerHTML = ''; return; }
+      if (!res.ok) { noteFail(); msg.innerHTML = '<b style="color:#d9534f">Ho sentito poco.</b> Dì la parola con calma e a voce alta, poi tocca di nuovo.'; chips.innerHTML = ''; return; }
       drawAnalysis(body.querySelector('#cv'), targets, res);
       chips.innerHTML = res.syl.map(function (s) {
         var txt = !s.present ? 'non sentita' : s.ok ? (s.target === 5 ? 'ok' : s.target + '° tono ✓') : ('sembrava ' + s.detected + '°, serve ' + s.target + '°');
@@ -318,10 +321,10 @@
         msg.innerHTML = '<b style="color:#2e9e5b">✓ Bravo! ' + res.score + '/100</b> — passo alla prossima!';
         timer = setTimeout(function () { leave(true); }, 1600);
       } else {
-        fails++;
+        if (strict) noteFail(); else fails++;
         var extra = res.found < res.expected ? ' Ho sentito ' + res.found + ' sillab' + (res.found === 1 ? 'a' : 'e') + ', ne servono ' + res.expected + '.' : '';
-        msg.innerHTML = '<b style="color:#d9534f">' + res.score + '/100</b> — ' + (res.pass ? 'il tono va bene, ma i suoni no.' : 'guarda la linea tratteggiata.') + extra + why + '<br><small>Vado alla prossima… (tocca 🎤 per riprovare subito)</small>';
-        clearTimeout(timer); timer = setTimeout(function () { if (!advancing) leave(false); }, 4200);
+        msg.innerHTML = '<b style="color:#d9534f">' + res.score + '/100</b> — ' + (res.pass ? 'il tono va bene, ma i suoni no.' : 'guarda la linea tratteggiata.') + extra + why + (strict ? '<br><small>Riprova: ascolta di nuovo 🔊 e tocca 🎤.' + (fails >= skipAfter ? ' Se vuoi, puoi saltare.' : '') + '</small>' : '<br><small>Vado alla prossima… (tocca 🎤 per riprovare subito)</small>');
+        if (!strict) { clearTimeout(timer); timer = setTimeout(function () { if (!advancing) leave(false); }, 4200); }
       }
     }
     function s0() { return S.get(); }
@@ -352,7 +355,7 @@
         } else {
           A.stop();
           A.record().then(function (r) { rec = r; btn.classList.add('live'); btn.textContent = '⏹️ Ferma'; msg.textContent = 'Ti ascolto… di\' la parola e tocca ancora.'; })
-            .catch(function (err) { msg.textContent = 'Microfono non disponibile: ' + err.message + ' Puoi saltare.'; });
+            .catch(function (err) { msg.textContent = 'Microfono non disponibile: ' + err.message + ' Puoi saltare.'; var sb = body.querySelector('#skipBtn'); if (sb) sb.classList.remove('hide'); });
         }
       }
     };
