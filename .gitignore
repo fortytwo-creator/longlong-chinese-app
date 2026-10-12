@@ -11,3 +11,4 @@ node_modules/
 # versione per gli store
 native/www/
 native/node_modules/
+models/*.tar.gz
