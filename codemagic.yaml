@@ -115,7 +115,7 @@ workflows:
       node: 20
       java: 17
       android_signing:
-        - longlong_keystore          # nome dato alla chiave in Codemagic → Code signing identities → Android keystores
+        - Lovetemasu Android         # nome della chiave in Codemagic → Code signing identities → Android keystores
       vars:
         NOSTORE: "1"                 # APK fuori da Google Play: niente acquisto, il piano completo si sblocca con i codici
     scripts:
