@@ -55,6 +55,18 @@ if (fs.existsSync(gr)) {
       s = s.replace(/buildTypes\s*\{\s*release\s*\{/, m => sc + '\n        release {\n            signingConfig signingConfigs.release'); changed = true;
     } else console.log('Android build.gradle: blocco release non trovato, firma NON aggiunta');
   }
+  // androidx.core 1.15+ richiede compileSdk 35 e un Android Gradle Plugin più nuovo: si resta sulla 1.13.1 (compatibile con compileSdk 34 di Capacitor 6)
+  if (!s.includes('LONGLONG_PIN')) {
+    s += `
+// LONGLONG_PIN: blocca androidx.core alla versione compatibile con compileSdk 34
+configurations.all {
+    resolutionStrategy {
+        force 'androidx.core:core:1.13.1'
+        force 'androidx.core:core-ktx:1.13.1'
+    }
+}
+`; changed = true;
+  }
   if (changed) fs.writeFileSync(gr, s);
   console.log('Android build.gradle:', changed ? 'versione/firma impostate' : 'invariato');
 }
