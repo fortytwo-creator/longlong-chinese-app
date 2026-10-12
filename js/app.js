@@ -1,6 +1,6 @@
 /* 龙龙中文 - schermate, corso guidato (100 lezioni) e dojo. Tutti i pulsanti usano la delega degli eventi. */
 (function () {
-  window.APP_VERSION = '2026-10-12 · store 3';
+  window.APP_VERSION = '2026-10-12 · store 4';
   'use strict';
 
   var Ut = window.Util, Steps = window.Steps, A = window.AudioKit, S = window.Store, Ent = window.Ent, Off = window.Offline, P = window.Pitch;

@@ -16,6 +16,16 @@
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
   }
+  /* vibrazione: nell'app (iPhone e Android) con il plugin Haptics di Capacitor; nel browser solo Android (iPhone/Safari non la permette) */
+  function hap() { var C = window.Capacitor; return C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.Haptics || null; }
+  function buzz(kind) {
+    if (!on()) return;
+    var H = hap();
+    try {
+      if (H) { if (kind === 'win') H.notification({ type: 'SUCCESS' }); else H.impact({ style: 'LIGHT' }); }
+      else if (navigator.vibrate) navigator.vibrate(kind === 'win' ? [30, 40, 30, 40, 60] : 6);
+    } catch (e) { /* ignora */ }
+  }
   function tick() { if (!on()) return; tone(880, 0, 0.09, 0.09, 'sine'); tone(1320, 0.02, 0.07, 0.04, 'sine'); }
 
   /* ---------- tocco: piccola animazione su qualsiasi tasto ---------- */
@@ -24,7 +34,7 @@
     var b = e.target.closest && e.target.closest(TAPPABLE); if (!b || b.disabled) return;
     b.classList.remove('tap'); void b.offsetWidth; b.classList.add('tap');
     setTimeout(function () { b.classList.remove('tap'); }, 260);
-    if (navigator.vibrate) { try { navigator.vibrate(6); } catch (er) { /* ignora */ } }
+    buzz('tap');
   }, true);
 
   /* ---------- "tic" di selezione: home, corso, dojo, profilo (non dentro le lezioni, dove parla la voce) ---------- */
@@ -89,8 +99,9 @@
       });
       if (el < 3400 && !reduce) requestAnimationFrame(frame); else if (cv.parentNode) cv.parentNode.removeChild(cv);
     })(t0);
+    buzz('win');
     if (on()) { [523, 659, 784, 1047].forEach(function (f, k) { tone(f, k * 0.11, 0.35, 0.1, 'triangle'); }); tone(1568, 0.5, 0.6, 0.07, 'sine'); }
   }
 
-  window.Fx = { tick: tick, confetti: confetti };
+  window.Fx = { tick: tick, buzz: buzz, confetti: confetti };
 })();
