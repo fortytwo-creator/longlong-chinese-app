@@ -33,6 +33,32 @@ if (fs.existsSync(man)) {
   console.log('Android manifest:', changed ? 'permessi aggiunti' : 'già a posto');
 } else console.log('Android: cartella non trovata (esegui "npx cap add android").');
 
+/* ---------- Android: firma e numero di versione (per l'APK da installare a mano) ---------- */
+const gr = path.join(root, 'android', 'app', 'build.gradle');
+if (fs.existsSync(gr)) {
+  let s = fs.readFileSync(gr, 'utf8'), changed = false;
+  const E = process.env, vc = parseInt(E.BUILD_NUMBER || E.PROJECT_BUILD_NUMBER || '', 10);
+  if (vc > 0) {   // ogni build ha un numero più alto: Android permette di installare sopra la versione precedente, senza perdere i progressi
+    s = s.replace(/versionCode\s+\d+/, 'versionCode ' + vc).replace(/versionName\s+"[^"]*"/, 'versionName "1.0.' + vc + '"'); changed = true;
+  }
+  if (E.CM_KEYSTORE_PATH && !s.includes('signingConfigs')) {
+    const sc = `    signingConfigs {
+        release {
+            storeFile file(System.getenv("CM_KEYSTORE_PATH"))
+            storePassword System.getenv("CM_KEYSTORE_PASSWORD")
+            keyAlias System.getenv("CM_KEY_ALIAS")
+            keyPassword System.getenv("CM_KEY_PASSWORD")
+        }
+    }
+    buildTypes {`;
+    if (/buildTypes\s*\{\s*release\s*\{/.test(s)) {
+      s = s.replace(/buildTypes\s*\{\s*release\s*\{/, m => sc + '\n        release {\n            signingConfig signingConfigs.release'); changed = true;
+    } else console.log('Android build.gradle: blocco release non trovato, firma NON aggiunta');
+  }
+  if (changed) fs.writeFileSync(gr, s);
+  console.log('Android build.gradle:', changed ? 'versione/firma impostate' : 'invariato');
+}
+
 /* ---------- icona dell'app ---------- */
 const res = path.join(root, 'resources');
 const set = path.join(root, 'ios', 'App', 'App', 'Assets.xcassets', 'AppIcon.appiconset');

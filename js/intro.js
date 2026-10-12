@@ -72,7 +72,7 @@
 
   function run(body, api) {
     var nodes = [
-      { page: 'welcome' }, { page: 'song' }, { page: 'tones' },
+      { page: 'welcome' }, { page: 'profile' }, { page: 'song' }, { page: 'tones' },
       { splash: 'listen' }, { step: 'quiz', title: '👂 Che tono è?', cfg: { words: MA, pool: MA, kinds: ['tone'], n: 4, toneItems: MA, seqTones: true } },
       { splash: 'speak' }, { step: 'repeat', title: '🎤 Ripeti', cfg: { words: repeatWords(), strict: true, skipAfter: SKIP_AFTER } },
       { splash: 'write' }, { page: 'order' }, { page: 'zhongwen' },
@@ -92,7 +92,7 @@
     }
     function show() {
       if (ended) return;
-      api.cleanup(); body.onclick = null; body.innerHTML = ''; body.scrollTop = 0;
+      api.cleanup(); body.onclick = null; body.oninput = null; body.innerHTML = ''; body.scrollTop = 0;
       api.setProg(k / nodes.length);
       var n = nodes[k]; if (!n) return exit(false);
       if (n.page) return page(n.page);
@@ -119,6 +119,13 @@
         h = mascot('Ciao! Io sono <b>龙龙</b>, il tuo drago. Ti insegno il cinese, ed è più facile di quanto pensi. Prima proviamo insieme le <b>cose che farai nel corso</b>: ascoltare, parlare, leggere e scrivere.') +
           '<div class="i-skills">' + ORDER.map(function (s) { var d = SKILL[s]; return '<div style="--c:' + d.color + '"><b>' + d.zh + '</b><small>' + d.name + '</small></div>'; }).join('') + '</div>' +
           '<p class="lead" style="text-align:center">Ci vogliono pochi minuti. Tieni il microfono pronto!</p>' + btns('Cominciamo!');
+      } else if (name === 'profile') {
+        var pr = window.Store.get().profile, nm = pr.introDone ? pr.name : '';
+        h = mascot('Come ti chiami? E quale amico vuoi accanto a te mentre impari?') +
+          '<div class="card form i-prof"><label>Il tuo nome<input id="iName" type="text" maxlength="14" autocomplete="off" placeholder="Scrivi qui" value="' + esc(nm) + '"></label>' +
+          '<div class="lbl">Scegli il tuo avatar</div><div class="chips" id="iAv">' +
+          window.AVATARS.map(function (a) { return '<button class="chip' + (a === pr.avatar ? ' on' : '') + '" data-i="avatar" data-id="' + a + '">' + a + '</button>'; }).join('') +
+          '</div><div class="err" id="iErr"></div></div>' + btns('Avanti');
       } else if (name === 'song') {
         h = mascot('In cinese ogni sillaba ha una <b>melodia</b>: si chiama <b>tono</b>. Cambia la melodia e cambia il significato!') +
           '<p class="lead" style="text-align:center">Prendi la sillaba <b>ma</b>. Con quattro melodie diverse significa:</p>' +
@@ -142,15 +149,27 @@
           '<div class="i-zw"><div><span style="color:' + toneColor(1) + '">中</span><span style="color:' + toneColor(2) + '">文</span></div><small><span style="color:' + toneColor(1) + '">zhōng</span> <span style="color:' + toneColor(2) + '">wén</span></small></div>' +
           '<p class="lead" style="text-align:center"><b>Zhōngwén</b> = la lingua cinese! Ora proviamo a scriverlo.</p>' + btns('Proviamo! ✍️');
       } else if (name === 'end') {
-        h = mascot('Bravissimo! Hai provato ad <b>ascoltare</b>, <b>parlare</b> e <b>scrivere</b>.') +
+        h = mascot('Bravissimo' + (window.Store.get().profile.name ? ', <b>' + esc(window.Store.get().profile.name) + '</b>' : '') + '! Hai provato ad <b>ascoltare</b>, <b>parlare</b> e <b>scrivere</b>.') +
           '<div class="tipcard"><div class="t-ico">🐉</div><p>Nel corso troverai anche il <b>leggere</b>, il <b>ripasso intelligente</b> (le parole difficili tornano più spesso) e il <b>Dojo</b>, con giochi e sfide. Si comincia dalla lezione 1, quando vuoi tu.</p></div>' + btns('Inizia! 🎉');
       }
       body.innerHTML = '<div class="pg">' + h + '</div>';
       var demo = null;
       if (name === 'order') { demo = strokeDemo(body.querySelector('#iHz'), '中'); api.onLeave(function () { demo.stop(); }); }
+      body.oninput = function () { var er = body.querySelector('#iErr'); if (er) er.textContent = ''; };
       body.onclick = function (e) {
         var t = e.target.closest('[data-i]'); if (!t || t.disabled) return; var a = t.dataset.i;
-        if (a === 'next') { api.stop(); k++; show(); }
+        if (a === 'next') {
+          if (name === 'profile') {
+            var nmv = (body.querySelector('#iName').value || '').trim();
+            if (!nmv) { body.querySelector('#iErr').textContent = 'Scrivi il tuo nome per continuare.'; body.querySelector('#iName').focus(); return; }
+            window.Store.get().profile.name = nmv; window.Store.save();
+          }
+          api.stop(); k++; show();
+        }
+        else if (a === 'avatar') {
+          window.Store.get().profile.avatar = t.dataset.id; window.Store.save();
+          body.querySelectorAll('#iAv .chip').forEach(function (c) { c.classList.toggle('on', c === t); });
+        }
         else if (a === 'show') { if (demo) demo.play(); }
         else if (a === 'tone') { markHeard(+t.dataset.n); say(MA[+t.dataset.n - 1].zh); }
         else if (a === 'all') {

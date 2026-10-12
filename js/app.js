@@ -1,6 +1,6 @@
 /* 龙龙中文 - schermate, corso guidato (100 lezioni) e dojo. Tutti i pulsanti usano la delega degli eventi. */
 (function () {
-  window.APP_VERSION = '2026-10-12 · store 4';
+  window.APP_VERSION = '2026-10-12 · store 7';
   'use strict';
 
   var Ut = window.Util, Steps = window.Steps, A = window.AudioKit, S = window.Store, Ent = window.Ent, Off = window.Offline, P = window.Pitch;
@@ -678,10 +678,9 @@
     voice: function (t) { S.get().profile.voice = t.dataset.id; S.save(); render(); say('你好'); },
     backup: function () {
       var data = { app: 'longlong', version: 1, savedAt: new Date().toISOString(), data: S.exportData() };
-      var blob = new Blob([JSON.stringify(data)], { type: 'application/json' }), a = document.createElement('a');
-      a.href = URL.createObjectURL(blob); a.download = 'longlong-backup-' + S.today() + '.json';
-      document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
-      toast('💾 Backup scaricato: tienilo in un posto sicuro');
+      Ut.saveFile(new Blob([JSON.stringify(data)], { type: 'application/json' }), 'longlong-backup-' + S.today() + '.json').then(function (r) {
+        if (r !== 'cancel') toast('💾 Backup pronto: tienilo in un posto sicuro');
+      }, function (er) { toast('⚠️ Non riesco a salvare il backup: ' + (er && er.message ? er.message : er)); });
     },
     restore: function () { var f = $('#restoreFile'); if (f) f.click(); },
     account: function () { showAccount(); },

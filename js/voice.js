@@ -137,9 +137,9 @@
       else if (a === 'app') A.speak(w.zh, { gender: 'FEMALE', slow: false, noMine: true });
       else if (a === 'mine') { var u = urlOf(w.id); if (u) A.playUrl(u).catch(function () {}); }
       else if (a === 'export') {
-        var blob = exportAll(opt.who), l = document.createElement('a');
-        l.href = URL.createObjectURL(blob); l.download = 'mia-voce-longlong-' + new Date().toISOString().slice(0, 10) + '.json'; document.body.appendChild(l); l.click(); l.remove();
-        setTimeout(function () { URL.revokeObjectURL(l.href); }, 4000); say('📤 File scaricato (' + count() + ' parole).');
+        window.Util.saveFile(exportAll(opt.who), 'mia-voce-longlong-' + new Date().toISOString().slice(0, 10) + '.json').then(function (r) {
+          if (r !== 'cancel') say('📤 File pronto (' + count() + ' parole).');
+        }, function (er) { say('Non riesco a esportare: ' + esc(er && er.message ? er.message : er)); });
       } else if (a === 'import') body.querySelector('#vsFile').click();
       else if (a === 'rec') {
         if (busy) return; clearTimeout(timer);

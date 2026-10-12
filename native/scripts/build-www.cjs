@@ -5,7 +5,7 @@
    Versione "senza server": tutto l'audio sta dentro l'app (audio/ + audio-premium/ se c'è), nessun account, nessun pacchetto da scaricare.
    Il piano completo si compra dagli store (CONFIG.productId, default it.longlong.chinese.premium).
    Uso: dalla cartella native:  npm run www
-   Variabili facoltative:  PRODUCT_ID=...   ACCOUNT=1 (rimette l'account cloud, serve Supabase)   PACK_URL=https://.../ (solo se NON metti tutto l'audio dentro) */
+   Variabili facoltative:  NOSTORE=1 (APK fuori dagli store: niente acquisto, solo codici)   PRODUCT_ID=...   ACCOUNT=1 (rimette l'account cloud, serve Supabase)   PACK_URL=https://.../ (solo se NON metti tutto l'audio dentro) */
 'use strict';
 const fs = require('fs'), path = require('path');
 const src = path.join(__dirname, '..', '..'), out = path.join(__dirname, '..', 'www');
@@ -33,7 +33,7 @@ if (fs.existsSync(ap) && !process.env.PACK_URL) {
 const E = process.env;
 const cfg = `/* generato da native/scripts/build-www.cjs */
 window.CONFIG = { azureKey: '', azureRegion: '', buyUrl: '', assetsBundled: true,
-  noAccount: ${E.ACCOUNT === '1' ? 'false' : 'true'}, productId: ${JSON.stringify(E.PRODUCT_ID || 'it.longlong.chinese.premium')},
+  noAccount: ${E.ACCOUNT === '1' ? 'false' : 'true'}, noStore: ${E.NOSTORE === '1' ? 'true' : 'false'}, productId: ${JSON.stringify(E.PRODUCT_ID || 'it.longlong.chinese.premium')},
   packUrl: ${JSON.stringify(E.PACK_URL || '')} };
 `;
 fs.writeFileSync(path.join(out, 'config.js'), cfg);

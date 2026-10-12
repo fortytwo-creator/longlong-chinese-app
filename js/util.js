@@ -70,6 +70,30 @@
     return say(list[i]).then(function () { return new Promise(function (r) { setTimeout(r, 175); }); }).then(function () { return sayAll(list, i + 1); });
   }
 
-  window.Util = { esc: esc, shuffle: shuffle, pick: pick, $: $, toneOf: toneOf, toneColor: toneColor, zhHtml: zhHtml, pyHtml: pyHtml,
+  /* Salva/esporta un file. Nell'app (iPhone/Android) e dal telefono apre il foglio di condivisione ("Salva su File", AirDrop, WhatsApp, e-mail…):
+     il classico <a download> non funziona dentro l'app. Su PC scarica il file. Ritorna una Promise: 'shared' | 'saved' | 'cancel'. */
+  function saveFile(blob, name) {
+    var C = window.Capacitor, native = !!(C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.Filesystem && C.Plugins.Share);
+    if (native) {
+      return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res(String(fr.result).split(',')[1] || ''); }; fr.onerror = function () { rej(fr.error); }; fr.readAsDataURL(blob); })
+        .then(function (b64) { return C.Plugins.Filesystem.writeFile({ path: name, directory: 'CACHE', data: b64 }); })
+        .then(function (r) { return C.Plugins.Share.share({ title: name, dialogTitle: 'Salva o invia il file', files: [r.uri] }); })
+        .then(function () { return 'shared'; })
+        .catch(function (e) { if (e && /cancel|dismiss/i.test(String(e.message || e))) return 'cancel'; throw e; });
+    }
+    try {
+      var f = new File([blob], name, { type: blob.type || 'application/octet-stream' });
+      if (navigator.canShare && navigator.canShare({ files: [f] }) && /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)) {
+        return navigator.share({ files: [f], title: name }).then(function () { return 'shared'; }).catch(function (e) { if (e && e.name === 'AbortError') return 'cancel'; return anchor(); });
+      }
+    } catch (e) { /* ripiega sul download */ }
+    return Promise.resolve(anchor());
+    function anchor() {
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000); return 'saved';
+    }
+  }
+
+  window.Util = { saveFile: saveFile, esc: esc, shuffle: shuffle, pick: pick, $: $, toneOf: toneOf, toneColor: toneColor, zhHtml: zhHtml, pyHtml: pyHtml,
     tokHtml: tokHtml, sentHtml: sentHtml, toneItems: toneItems, toneSvg: toneSvg, stars: stars, toast: toast, say: say, sayAll: sayAll };
 })();

@@ -134,7 +134,7 @@ Se Apple non è disponibile, ricade su Vosk; sul sito e su Android non cambia nu
 Il codice Swift è in `native/plugins/longlong-speech/ios/Plugin/`.
 
 ## Codemagic (compilare senza Mac)
-`codemagic.yaml` è nella radice. Collega il repository a Codemagic: parti da **ios-prova** (non serve l'account Apple) per vedere se il codice Swift compila; poi **android-prova** per un APK; **ios-testflight** solo con l'account Apple Developer. Non servono variabili (solo `PRODUCT_ID`, facoltativa). Il modello Vosk (`models/vosk-cn.tar.gz`) non è nel repository: serve solo ad Android.
+`codemagic.yaml` è nella radice. Collega il repository a Codemagic: parti da **ios-prova** (non serve l'account Apple) per vedere se il codice Swift compila; poi **android-prova** per un APK; **ios-testflight** solo con l'account Apple Developer. Non servono variabili (solo `PRODUCT_ID`, facoltativa). Il modello Vosk (`models/vosk-cn.tar.gz`, 44 MB) deve stare nel repository (con `git add models/vosk-cn.tar.gz`): serve ad Android.
 
 ## Introduzione al primo avvio
 
@@ -148,3 +148,11 @@ Percorso: benvenuto → i 4 toni (si ascoltano tutti) → riconosci il tono → 
 Prima di ogni build per gli store, dalla cartella del progetto:  `node tools/check-offline.cjs`
 Controlla audio (voce femminile e maschile) di tutti i testi, tratti di tutti i caratteri da scrivere, modello vocale (Android), icone e librerie locali.
 Poi una prova vera: modalità aereo, apri l'app, fai l'introduzione, una lezione, "Ripeti" e "Scrivi". Solo l'acquisto e il ripristino dell'acquisto richiedono la rete.
+
+## APK per Android (da installare a mano, senza Google Play)
+Workflow Codemagic **android-apk**: produce `app-release.apk` firmato. Fuori da Google Play non c'è l'acquisto: il piano completo si sblocca con i codici (`node tools/make-code.cjs --nuovi N`).
+1. Codemagic → Teams/Personal settings → **Code signing identities → Android keystores → Generate keystore**. Reference name: `longlong_keystore`. Scrivi alias e password e conservali: con la stessa chiave gli aggiornamenti si installano sopra la versione vecchia senza perdere i progressi (con una chiave diversa Android obbliga a disinstallare).
+2. Il modello vocale `models/vosk-cn.tar.gz` deve essere nel repository (altrimenti su Android funziona solo il controllo dei toni).
+3. Commit, push, avvia **android-apk**. A fine build scarichi l'APK dagli *Artifacts*.
+4. Sul telefono: apri il file, consenti «Installa app sconosciute» per quel programma (browser o File), installa.
+`prepare-platforms.cjs` imposta da solo firma e numero di versione (cresce a ogni build). La variabile `NOSTORE=1` spegne l'acquisto dagli store; per Google Play (non APK) si userà un altro workflow con `.aab` e senza `NOSTORE`.

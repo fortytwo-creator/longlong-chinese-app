@@ -106,3 +106,31 @@ workflows:
           ./gradlew assembleDebug
     artifacts:
       - native/android/app/build/outputs/**/*.apk
+
+  android-apk:
+    name: Android - APK firmato (da installare a mano)
+    instance_type: linux_x2
+    max_build_duration: 45
+    environment:
+      node: 20
+      java: 17
+      android_signing:
+        - longlong_keystore          # nome dato alla chiave in Codemagic → Code signing identities → Android keystores
+      vars:
+        NOSTORE: "1"                 # APK fuori da Google Play: niente acquisto, il piano completo si sblocca con i codici
+    scripts:
+      - *prepara_nativo
+      - name: Aggiungi Android, permessi, firma e numero di versione
+        script: |
+          set -e
+          cd native
+          npx cap add android
+          npx cap sync android
+          node scripts/prepare-platforms.cjs
+      - name: Compila l'APK firmato
+        script: |
+          set -e
+          cd native/android
+          ./gradlew assembleRelease
+    artifacts:
+      - native/android/app/build/outputs/**/*.apk
