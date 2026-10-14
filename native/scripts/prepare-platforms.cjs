@@ -33,11 +33,11 @@ if (fs.existsSync(man)) {
   console.log('Android manifest:', changed ? 'permessi aggiunti' : 'già a posto');
 } else console.log('Android: cartella non trovata (esegui "npx cap add android").');
 
-/* ---------- Android: minSdk 23 (la libreria degli acquisti di Google richiede almeno Android 6) ---------- */
+/* ---------- Android: minSdk 24 (Android 7: richiesto da Google Play e dalla libreria degli acquisti) ---------- */
 const vg = path.join(root, 'android', 'variables.gradle');
 if (fs.existsSync(vg)) {
   let v = fs.readFileSync(vg, 'utf8');
-  if (/minSdkVersion\s*=\s*2[0-2]\b/.test(v)) { v = v.replace(/minSdkVersion\s*=\s*2[0-2]\b/, 'minSdkVersion = 23'); fs.writeFileSync(vg, v); console.log('Android variables.gradle: minSdkVersion 23'); }
+  if (/minSdkVersion\s*=\s*(1\d|2[0-3])\b/.test(v)) { v = v.replace(/minSdkVersion\s*=\s*(1\d|2[0-3])\b/, 'minSdkVersion = 24'); fs.writeFileSync(vg, v); console.log('Android variables.gradle: minSdkVersion 24'); }
   else console.log('Android variables.gradle: minSdk già a posto');
 }
 
