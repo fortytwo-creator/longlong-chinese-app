@@ -41,6 +41,50 @@ if (fs.existsSync(vg)) {
   else console.log('Android variables.gradle: minSdk già a posto');
 }
 
+/* ---------- Android: target API 36 (richiesto da Google Play) ---------- */
+const adr = path.join(root, 'android');
+if (fs.existsSync(adr)) {
+  const patch = (file, fn, label) => { if (!fs.existsSync(file)) return; const a = fs.readFileSync(file, 'utf8'), b = fn(a); if (b !== a) { fs.writeFileSync(file, b); console.log('Android', label, ': aggiornato'); } else console.log('Android', label, ': già a posto'); };
+  patch(vg, v => v.replace(/compileSdkVersion\s*=\s*\d+/, 'compileSdkVersion = 36').replace(/targetSdkVersion\s*=\s*\d+/, 'targetSdkVersion = 36'), 'variables.gradle (compile/target 36)');
+  patch(path.join(adr, 'build.gradle'), v => v.replace(/(com\.android\.tools\.build:gradle:)[\d.]+/, '$18.10.1'), 'Android Gradle Plugin 8.10.1');
+  patch(path.join(adr, 'gradle', 'wrapper', 'gradle-wrapper.properties'), v => v.replace(/gradle-[\d.]+-(all|bin)\.zip/, 'gradle-8.11.1-all.zip'), 'Gradle 8.11.1');
+  patch(path.join(adr, 'gradle.properties'), v => v.includes('suppressUnsupportedCompileSdk') ? v : v.replace(/\s*$/, '\n') + 'android.suppressUnsupportedCompileSdk=36\n', 'gradle.properties');
+  // da API 35 lo schermo è "a bordo a bordo": la pagina finirebbe sotto barra di stato e barra di navigazione. Si aggiunge il margine di sicurezza.
+  const ma = path.join(adr, 'app', 'src', 'main', 'java', 'it', 'longlong', 'chinese', 'MainActivity.java');
+  patch(ma, v => {
+    if (v.includes('LONGLONG_INSETS')) return v;
+    return `package it.longlong.chinese;
+
+import android.graphics.Color;
+import android.os.Bundle;
+import android.view.View;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import com.getcapacitor.BridgeActivity;
+
+// LONGLONG_INSETS: margini per barra di stato / navigazione (obbligatori con target API 35+)
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView()).setAppearanceLightStatusBars(true);
+        WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView()).setAppearanceLightNavigationBars(true);
+        final View root = findViewById(android.R.id.content);
+        root.setBackgroundColor(Color.parseColor("#fff7fa"));
+        ViewCompat.setOnApplyWindowInsetsListener(root, (view, windowInsets) -> {
+            Insets bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.ime());
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            return WindowInsetsCompat.CONSUMED;
+        });
+    }
+}
+`;
+  }, 'MainActivity (margini di sicurezza)');
+}
+
 /* ---------- Android: firma e numero di versione (per l'APK da installare a mano) ---------- */
 const gr = path.join(root, 'android', 'app', 'build.gradle');
 if (fs.existsSync(gr)) {
