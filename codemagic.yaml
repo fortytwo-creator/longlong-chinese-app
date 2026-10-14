@@ -134,3 +134,30 @@ workflows:
           ./gradlew assembleRelease
     artifacts:
       - native/android/app/build/outputs/**/*.apk
+
+  android-aab:
+    name: Android - pacchetto per Google Play (.aab)
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    environment:
+      node: 20
+      java: 17
+      android_signing:
+        - Lovetemasu Android         # chiave di firma: per Google Play fa da "chiave di caricamento"
+    scripts:
+      - *prepara_nativo
+      - name: Aggiungi Android, permessi, firma e numero di versione
+        script: |
+          set -e
+          cd native
+          npx cap add android
+          npx cap sync android
+          node scripts/prepare-platforms.cjs
+      - name: Crea il pacchetto .aab
+        script: |
+          set -e
+          cd native/android
+          ./gradlew bundleRelease
+    artifacts:
+      - native/android/app/build/outputs/**/*.aab
+
